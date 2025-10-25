@@ -16,7 +16,7 @@ public class JudgeSystem : MonoBehaviour
     private ComboRenderer comboRenderer;
     private ScoreManager scoreManager;
 
-    // ============== [B案] 追加: イベント分割データ構造 ==============
+    // ============== 追加: イベント分割データ構造 ==============
     private enum NoteEventType { Tap, Flick, HoldStart, HoldTick }
     private enum NoteEventState { Pending, Judged }
 
@@ -43,7 +43,7 @@ public class JudgeSystem : MonoBehaviour
     // lane+group から Pending イベントを素早く引くためのインデックス
     private Dictionary<(int lane, int group), List<int>> pendingIndex = new Dictionary<(int,int), List<int>>();
 
-    // [B案] 近傍探索の時間幅（早押しスルー緩和用）：判定窓は gameSettings の perfect/great/good/miss を使用
+    // 近傍探索の時間幅（早押しスルー緩和用）：判定窓は gameSettings の perfect/great/good/miss を使用
     private double windowEarlyMs => gameSettings.missMS; // 早すぎはスルーしたい幅（早押し窓外は無視）
 
     // ========================= [EndCleanup] ホールド終点の削除スケジュール =========================
@@ -66,10 +66,10 @@ public class JudgeSystem : MonoBehaviour
         gameSettings = settings;
         notesItems = new List<NotesItem>(chart);
 
-        // [B案] 譜面をイベントへ展開
+        // 譜面をイベントへ展開
         BuildEventsFromChart(notesItems);
 
-        // [B案] pendingインデックス構築
+        // pendingインデックス構築
         RebuildPendingIndex();
     }
 
@@ -78,7 +78,7 @@ public class JudgeSystem : MonoBehaviour
         notesObjects.Add(notes.id, notes);
     }
 
-    // ========================= [B案] 譜面→イベント展開 =========================
+    // ========================= 譜面→イベント展開 =========================
     private void BuildEventsFromChart(List<NotesItem> items)
     {
         noteEvents.Clear();
@@ -146,7 +146,7 @@ public class JudgeSystem : MonoBehaviour
 
         // Beat昇順（任意だがデバッグしやすい）
         noteEvents.Sort((a, b) => a.beat.CompareTo(b.beat));
-        // 再番号（任意）
+
         for (int i = 0; i < noteEvents.Count; i++)
         {
             NoteEvent e = noteEvents[i];
@@ -227,13 +227,13 @@ public class JudgeSystem : MonoBehaviour
         }
     }
 
-    // ========================= [B案] 期限切れスイープ（Miss確定） =========================
+    // ========================= 期限切れスイープ（Miss確定） =========================
     public void UpdateJudge()
     {
         // Miss判定用（スイーパ）
         double nowSec = TimingManager.GetNowDsp(gameSettings);
 
-        // [B案] Pending の中から締切超過をMissへ
+        // Pending の中から締切超過をMissへ
         // ※ コストが気になる場合は min-heap/カーソルで時間順に走査
         for (int i = 0; i < noteEvents.Count; i++)
         {
@@ -271,7 +271,7 @@ public class JudgeSystem : MonoBehaviour
         }
     }
 
-    // ========================= [B案] 判定実行 =========================
+    // ========================= 判定実行 =========================
 
     // 判定実行 押したキーはlaneIDに変換して渡す
     // 左から 0,1,2 同様にグループも左から 0,1,2
@@ -279,7 +279,7 @@ public class JudgeSystem : MonoBehaviour
     {
         double nowSec = TimingManager.GetNowDsp(gameSettings);
 
-        // [B案] lane+groupのPending候補から、Tap or HoldStart の「時間が近い順」を探索
+        // lane+groupのPending候補から、Tap or HoldStart の「時間が近い順」を探索
         int candidateIdx = GetBestCandidateEventIndex(laneID, groupID, nowSec,
             allowedTypes: new[] { NoteEventType.Tap, NoteEventType.HoldStart });
 
@@ -292,7 +292,7 @@ public class JudgeSystem : MonoBehaviour
     {
         double nowSec = TimingManager.GetNowDsp(gameSettings);
 
-        // [B案] laneは不問、groupとdirection一致の Flick を探索
+        // laneは不問、groupとdirection一致の Flick を探索
         // Flickはレーン固定でない仕様なら、全lane候補から group+dir で最良を拾う
         int bestIdx = -1;
         double bestAbsMs = double.MaxValue;
@@ -331,8 +331,8 @@ public class JudgeSystem : MonoBehaviour
     // 押しっぱなしならPerfect、離してたらMiss
     public void HoldNotesKeepJudge(List<int> holdingLanes, int groupID, int nowBeat)
     {
-        // [B案] この関数では該当Beatの HoldTick をすべて確定させる
-        // 「0拍起点の整数拍ごと」のTickをイベントとして持っているので、そのBeat一致のPendingだけを見る
+        // 該当Beatの HoldTick をすべて確定させる
+        // 0拍起点の整数拍ごとのTickをイベントとして持っているので、そのBeat一致のPendingだけを見る
         foreach (var kv in pendingIndex.ToList())
         {
             var (lane, group) = kv.Key;
@@ -361,7 +361,7 @@ public class JudgeSystem : MonoBehaviour
         }
     }
 
-    // ========================= [B案] 低レベル判定確定処理 =========================
+    // ========================= 低レベル判定確定処理 =========================
 
     // Δ時間から Perfect/Great/Good/Miss を決めて確定
     private JudgeType JudgeEventByDelta(int eventIdx, double nowSec)
@@ -398,10 +398,12 @@ public class JudgeSystem : MonoBehaviour
                 break;
             case JudgeType.Great:
                 judgeRenderer.ShowJudge(JudgeType.Great, isFast);
+                // TODO: タイミング加算
                 scoreManager.AddGreat();
                 break;
             case JudgeType.Good:
                 judgeRenderer.ShowJudge(JudgeType.Good, isFast);
+                // TODO: タイミング加算
                 scoreManager.AddGood();
                 break;
             case JudgeType.Miss:
@@ -451,7 +453,4 @@ public class JudgeSystem : MonoBehaviour
         }
         return bestIdx;
     }
-
-    // ========================= [既存のRelease系は内部で自動実行される =========================
-    // （DecSourcePendingAndMaybeRelease：イベントすべて確定 + [EndCleanup] センチネル解放で Release）
 }
