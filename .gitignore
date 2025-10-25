@@ -1,0 +1,145 @@
+# =============== #
+# Unity.gitignore #
+# =============== #
+
+# OS固有のファイル
+############################
+# Windows
+Thumbs.db
+Desktop.ini
+$RECYCLE.BIN/
+
+# macOS
+.DS_Store
+.AppleDouble
+.LSOverride
+Icon?
+._*
+
+# Linux
+*~
+
+# IDE・エディタ関連
+############################
+# VS / VSCode
+.vs/
+.vscode/
+*.csproj
+*.unityproj
+*.sln
+*.suo
+*.tmp
+*.user
+*.userprefs
+*.pidb
+*.booproj
+*.svd
+*.pdb
+*.mdb
+*.opendb
+*.VC.db
+*.VC.opendb
+
+# JetBrains Rider
+.idea/
+*.iml
+
+# Unityビルド出力関連
+############################
+[Bb]uild/
+[Bb]uilds/
+[Ll]ibrary/
+[Tt]emp/
+[Oo]bj/
+[Ll]ogs/
+[Mm]emoryCaptures/
+[Uu]serSettings/
+
+# Unity Cache Server
+/Cache/
+
+# 生成される自動ファイル
+############################
+/Assets/AssetStoreTools*
+*.apk
+*.aab
+*.unitypackage
+*.tmp
+*.bak
+*.bak.meta
+
+# Lightmap・GIなどのキャッシュ
+############################
+/LightmapSnapshot/
+*/Lightmap*
+*/LightingData.asset
+/Library/
+
+# アセットデータ
+############################
+# 保存したいアセットは /Assets に入れること
+/[Pp]ackages/*
+!/[Pp]ackages/manifest.json
+!/[Pp]ackages/packages-lock.json
+
+# Addressables
+############################
+/ServerData/
+*/AddressablesBuildTEP.json
+*/addressables_content_state.bin
+
+# StreamingAssets ビルド生成物
+############################
+/Assets/StreamingAssets/aa/*
+
+# Logs
+############################
+*.log
+*.stacktrace
+
+# プロファイラや解析出力
+############################
+/ProfileData*
+/*.pidb.meta
+/MemoryCaptures/
+
+# Crash & Error Reports
+############################
+sysinfo.txt
+error.log
+
+# Rider / VS 生成ファイル
+############################
+/ExportedObj/
+.vscode/
+.idea/
+
+# その他
+############################
+*.orig
+*.diff
+*.patch
+*.rej
+*.tpsheet
+*.mode1v3
+*.mode2v3
+*.tmproj
+*.jsc.meta
+
+# Unity Cloud Build
+############################
+/UnityCloudBuild/
+
+# 追加
+
+/Assets/TextMesh Pro
+/Assets/Scenes/*
+/Assets/MusicAssetDatas/*
+/Assets/Prefabs/*
+
+/Assets/Resources/Fonts/*
+/Assets/Resources/Musics/*
+/Assets/Resources/SoundEffects/*
+/Assets/Resources/Textures/*
+/Assets/Resources/Materials/*
+
