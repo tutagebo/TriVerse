@@ -67,6 +67,8 @@ Icon?
 *.tmp
 *.bak
 *.bak.meta
+*.meta
+*.asset
 
 # Lightmap・GIなどのキャッシュ
 ############################
@@ -136,6 +138,7 @@ error.log
 /Assets/Scenes/*
 /Assets/MusicAssetDatas/*
 /Assets/Prefabs/*
+/Assets/ProjectSettings/*
 
 /Assets/Resources/Fonts/*
 /Assets/Resources/Musics/*
