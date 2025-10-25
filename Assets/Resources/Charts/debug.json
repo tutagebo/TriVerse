@@ -1,0 +1,31 @@
+{
+  "version": 1,
+  "timing": {
+    "offsetMs": 619,
+    "resolution": 480,
+    "bpmPoints": [
+      { "beat": 0, "bpm": 195.0 }
+    ]
+  },
+  "chart": {
+    "difficulty": "Normal",
+    "lanes": 3,
+    "notes": [
+      {"lane":0,"group":1,"beat":0,"type":"hold","endBeat":3},
+      {"lane":1,"group":1,"beat":4,"type":"hold","endBeat":7},
+      {"lane":2,"group":1,"beat":8,"type":"hold","endBeat":11},
+      {"lane":0,"group":1,"beat":12,"type":"hold","endBeat":15},
+      {"lane":1,"group":1,"beat":16,"type":"hold","endBeat":19},
+      {"lane":2,"group":1,"beat":20,"type":"hold","endBeat":23},
+      {"lane":0,"group":1,"beat":24,"type":"hold","endBeat":27},
+      {"lane":1,"group":1,"beat":28,"type":"hold","endBeat":31},
+      {"lane":2,"group":1,"beat":32,"type":"hold","endBeat":35},
+      {"lane":0,"group":1,"beat":36,"type":"hold","endBeat":39},
+      {"lane":1,"group":1,"beat":40,"type":"hold","endBeat":43},
+      {"lane":2,"group":1,"beat":44,"type":"hold","endBeat":47}
+    ],
+    "events": [
+      { "beat": 0.0, "kind": "scroll", "mult": 1.0 }
+    ]
+  }
+}

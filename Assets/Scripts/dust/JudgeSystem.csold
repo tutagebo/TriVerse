@@ -1,0 +1,228 @@
+using System.Collections;
+using System.Collections.Generic;
+using UnityEngine;
+using System.Linq;
+using System;
+
+
+public class JudgeSystem : MonoBehaviour
+{
+    private List<NotesItem> notesItems = new List<NotesItem>();
+    private Dictionary<NotesID, Notes> notesObjects = new Dictionary<NotesID, Notes>();
+    private GameSettings gameSettings;
+    private List<NotesItem> holdingNotes = new List<NotesItem>();
+    [SerializeField]
+    private JudgeRenderer judgeRenderer;
+    [SerializeField]
+    private ComboRenderer comboRenderer;
+    private ScoreManager scoreManager;
+    public void Init(NotesItem[] chart, ScoreManager scoreManager, GameSettings settings)
+    {
+        this.scoreManager = scoreManager;
+        this.scoreManager.Init(comboRenderer);
+        gameSettings = settings;
+        notesItems = new List<NotesItem>(chart);
+    }
+    public void RegisterNotesObject(Notes notes)
+    {
+        notesObjects.Add(notes.id, notes);
+    }
+    public void UpdateJudge()
+    {
+
+        // Miss判定用
+        double nowSeconds = TimingManager.GetNowDsp(gameSettings);
+        List<NotesItem> targetNotes = notesItems.Take(10).ToList();
+        foreach (NotesItem note in targetNotes)
+        {
+            if(note.type == "hold")
+            {
+                double holdStartSeconds = TimingManager.BeatToSeconds(note.beat, gameSettings.bpmPoints);
+                if ((nowSeconds - holdStartSeconds) * 1000.0 > gameSettings.missMS)
+                {
+                    scoreManager.AddMiss();
+                    judgeRenderer.ShowJudge(JudgeType.Miss);
+                    FinalizeNotes(note);
+                }
+            }
+            double noteBeat = (note.type == "hold") ? note.endBeat : note.beat; // ホールドノーツは終了拍位置で判定
+            double noteSeconds = TimingManager.BeatToSeconds(noteBeat, gameSettings.bpmPoints);
+            double judgeDelta = (nowSeconds - noteSeconds) * 1000.0; // ms
+            // Miss 判定 Absをとる必要はない
+            if (judgeDelta > gameSettings.missMS + 200) // 200msの猶予を持たせる
+            {
+                scoreManager.AddMiss();
+                judgeRenderer.ShowJudge(JudgeType.Miss);
+                // ノーツオブジェクトの削除
+                ReleaseNotesForce(note);
+                // Debug.Log($"[JudgeSystem] Natural Miss type: {note.type}");
+            }
+        }
+    }
+
+    // ホールドノーツの判定
+    // 1拍ごとに呼び出す
+    // 押しっぱなしならPerfect、離してたらMiss
+    public void HoldNotesKeepJudge(List<int> holdingLanes, int groupID, int nowBeat)
+    {
+        foreach (NotesItem notesItem in holdingNotes.ToList())
+        {
+            if (nowBeat >= notesItem.endBeat)
+            {
+                ReleaseCompleteHold(notesItem);
+                //Debug.Log($"[JudgeSystem] Hold Complete: noteID {notesItem.id}, beat {notesItem.beat}");
+            }
+            else if (holdingLanes.Contains(notesItem.lane) && notesItem.group == groupID)
+            {
+                judgeRenderer.ShowJudge(JudgeType.Perfect);
+                scoreManager.AddPerfect();
+                //Debug.Log($"[JudgeSystem] Hold Perfect: noteID {notesItem.id}, beat {notesItem.beat}");
+            }
+            else
+            {
+                judgeRenderer.ShowJudge(JudgeType.Miss);
+                scoreManager.AddMiss();
+                //Debug.Log($"[JudgeSystem] Hold Miss: noteID {notesItem.id}, beat {notesItem.beat}");
+            }
+        }
+    }
+    public JudgeType JudgeFlick(int groupID, FlickDirection direction)
+    {
+        double nowSeconds = TimingManager.GetNowDsp(gameSettings);
+        List<NotesItem> targetNotes = notesItems.Take(10).ToList();
+        foreach (NotesItem note in targetNotes)
+        {
+            if (note.type != "flick" || note.direction != direction || note.group != groupID) continue;
+            double noteSeconds = TimingManager.BeatToSeconds(note.beat, gameSettings.bpmPoints);
+            double judgeDelta = (nowSeconds - noteSeconds + gameSettings.userLatencyMs) * 1000.0; // ms
+
+            // 正でlate(0)、負でearly(1)
+            bool isFast = judgeDelta < 0;
+            double judgeDeltaAbs = Math.Abs(judgeDelta); // ms
+            switch (true)
+            {
+                // earlyかつMiss範囲外はスルー
+                case true when isFast && judgeDeltaAbs > gameSettings.missMS:
+                    continue;
+                case true when judgeDeltaAbs <= gameSettings.perfectMS:
+                    judgeRenderer.ShowJudge(JudgeType.Perfect);
+                    scoreManager.AddPerfect();
+                    //Debug.Log($"[JudgeSystem] Flick Perfect: group {note.group}, beat {note.beat}, delta {judgeDelta}");
+                    FinalizeNotes(note);
+                    return JudgeType.Perfect;
+                case true when judgeDeltaAbs <= gameSettings.greatMS:
+                    judgeRenderer.ShowJudge(JudgeType.Great, isFast);
+                    scoreManager.AddGreat();
+                    //Debug.Log($"[JudgeSystem] Flick Great: group {note.group}, beat {note.beat}, delta {judgeDelta}");
+                    FinalizeNotes(note);
+                    return JudgeType.Great;
+                case true when judgeDeltaAbs <= gameSettings.goodMS:
+                    judgeRenderer.ShowJudge(JudgeType.Good, isFast);
+                    scoreManager.AddGood();
+                    //Debug.Log($"[JudgeSystem] Flick Good: group {note.group}, beat {note.beat}, delta {judgeDelta}");
+                    FinalizeNotes(note);
+                    return JudgeType.Good;
+                default:
+                    judgeRenderer.ShowJudge(JudgeType.Miss);
+                    scoreManager.AddMiss();
+                    //Debug.Log($"[JudgeSystem] Flick Miss: group {note.group}, beat {note.beat}, delta {judgeDelta}");
+                    FinalizeNotes(note);
+                    return JudgeType.Miss;
+            }
+        }
+        return JudgeType.None;
+    }
+    // 判定実行 押したキーはlaneIDに変換して渡す
+    // 左から 0,1,2 同様にグループも左から 0,1,2
+    public JudgeType ExecuteJudge(int laneID, int groupID)
+    {
+        double nowSeconds = TimingManager.GetNowDsp(gameSettings);
+        List<NotesItem> targetNotes = notesItems.Take(10).ToList();
+        foreach (NotesItem note in targetNotes)
+        {
+            if (note.lane != laneID || note.group != groupID) continue;
+            double noteSeconds = TimingManager.BeatToSeconds(note.beat, gameSettings.bpmPoints);
+            double judgeDelta = (nowSeconds - noteSeconds + gameSettings.userLatencyMs) * 1000.0; // ms
+
+            // 正でlate、負でearly
+            bool isFast = judgeDelta < 0;
+            double judgeDeltaAbs = Math.Abs(judgeDelta); // ms
+            switch (true)
+            {
+                // earlyかつMiss範囲外はスルー
+                case true when isFast && judgeDeltaAbs > gameSettings.missMS:
+                    continue;
+                case true when judgeDeltaAbs <= gameSettings.perfectMS:
+                    judgeRenderer.ShowJudge(JudgeType.Perfect);
+                    scoreManager.AddPerfect();
+                    Debug.Log($"[JudgeSystem] Perfect: beat {note.beat} delta {judgeDelta}");
+                    FinalizeNotes(note);
+                    return JudgeType.Perfect;
+                case true when judgeDeltaAbs <= gameSettings.greatMS:
+                    judgeRenderer.ShowJudge(JudgeType.Great, isFast);
+                    scoreManager.AddGreat();
+                    Debug.Log($"[JudgeSystem] Great: beat {note.beat} delta {judgeDelta}");
+                    FinalizeNotes(note);
+                    return JudgeType.Great;
+                case true when judgeDeltaAbs <= gameSettings.goodMS:
+                    judgeRenderer.ShowJudge(JudgeType.Good, isFast);
+                    scoreManager.AddGood();
+                    Debug.Log($"[JudgeSystem] Good: beat {note.beat} delta {judgeDelta}");
+                    FinalizeNotes(note);
+                    return JudgeType.Good;
+                default:
+                    judgeRenderer.ShowJudge(JudgeType.Miss);
+                    scoreManager.AddMiss();
+                    Debug.Log($"[JudgeSystem] Miss: beat {note.beat} delta {judgeDelta}");
+                    FinalizeNotes(note);
+                    return JudgeType.Miss;
+            }
+        }
+        return JudgeType.None;
+    }
+    void FinalizeNotes(NotesItem notes)
+    {
+        if (notes.type == "hold")
+        {
+            // ホールドノーツなら削除し、Holdingに入れる
+            holdingNotes.Add(notes);
+            int idx = notesItems.FindIndex(n => n.id.Equals(notes.id));
+            notesItems.RemoveAt(idx);
+            // GameObject 側にHoldingフラグをセット
+            // if (notesObjects.TryGetValue(notes.id, out var obj)) (obj as HoldNotes).SetHoldingFlag(true);
+            return;
+        }
+        ReleaseNotes(notes);
+    }
+    void ReleaseNotes(NotesItem notes)
+    {
+        // まず GameObject 側の片付け
+        if (notesObjects.TryGetValue(notes.id, out var obj))
+        {
+            obj.Release();
+            bool a = notesObjects.Remove(notes.id);
+        }
+        // ノーツはリストの先頭からふってくるので、線形探索でも問題ない
+        int idx = notesItems.FindIndex(n => n.id.Equals(notes.id));
+        notesItems.RemoveAt(idx);
+    }
+    void ReleaseNotesForce(NotesItem notes)
+    {
+        if (notes.type == "hold") holdingNotes.Remove(notes);
+        ReleaseNotes(notes);
+    }
+
+    // ホールドノーツの完了処理
+    void ReleaseCompleteHold(NotesItem notes)
+    {
+        // まず GameObject 側の片付け
+        if (notesObjects.TryGetValue(notes.id, out var obj) && obj.isReleased == false)
+        {
+            obj.Release();
+            notesObjects.Remove(notes.id);
+        }
+        int idx = notesItems.FindIndex(n => n.id.Equals(notes.id));
+        if (idx != -1) notesItems.RemoveAt(idx);
+        holdingNotes.Remove(notes);
+    }
+}
