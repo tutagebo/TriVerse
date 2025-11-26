@@ -4,6 +4,9 @@ using UnityEngine;
 
 public class GameManager : MonoBehaviour
 {
+    [Header("Data関連")]
+    [SerializeField]
+    private GlobalData globalData;
     [Header("音楽関連")]
     [SerializeField]
     private AudioSource audioSource;
@@ -108,8 +111,8 @@ public class GameManager : MonoBehaviour
     void StartGame()
     {
         // GlobalDataから選択された曲と難易度を取得
-        MusicDataSO selectedMusic = GlobalData.Instance.GetSelectedMusic();
-        Difficulty selectedDifficulty = GlobalData.Instance.GetSelectedDifficulty();
+        MusicDataSO selectedMusic = globalData.selectedMusic;
+        Difficulty selectedDifficulty = globalData.selectedDifficulty;
         
         TextAsset chartJson = selectedMusic.charts[(int)selectedDifficulty];
 
@@ -188,10 +191,10 @@ public class GameManager : MonoBehaviour
         isGameStarted = false;
         scoreManager.calculateFinalScore(notesJudgeCount, gameSettings.judgeScoreTable);
         ScoreData scoreData = scoreManager.GetScoreData();
-        // Debug.Log($"Perfect: {scoreData.perfects}\n Great: {scoreData.greats}\n Good: {scoreData.goods}\n Miss: {scoreData.misses}\n Combo: {scoreData.maxCombo}");
+        // リセット
+        globalData.Clear();
+        globalData.scoreData = scoreData;
 
-        GlobalData.Instance.SetSelectedMusic(null);
-        GlobalData.Instance.SetScoreData(scoreData);
         // 結果画面へ遷移
         UnityEngine.SceneManagement.SceneManager.LoadScene("ResultScene");
     }

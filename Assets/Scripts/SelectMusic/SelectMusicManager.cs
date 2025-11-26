@@ -5,6 +5,9 @@ using UnityEngine;
 public class SelectMusicManager : MonoBehaviour
 {
     [SerializeField]
+    private GlobalData globalData;
+
+    [SerializeField]
     private MusicDatabase musicDatabase;
 
     [Header("UI")]
@@ -30,15 +33,15 @@ public class SelectMusicManager : MonoBehaviour
             Destroy(contentRoot.GetChild(i).gameObject);
         // とりあえず最初の曲をジャケットに表示
         jacketController.ChangeMusicData(musicDatabase.songs[0]);
-        GlobalData.Instance.SetSelectedMusic(musicDatabase.songs[0]);
+        globalData.selectedMusic = musicDatabase.songs[0];
         // 他の難易度を実装していないため、とりあえずExpertに固定
         jacketController.ChangeDifficulty(Difficulty.Expert);
-        GlobalData.Instance.SetSelectedDifficulty(Difficulty.Expert);
+        globalData.selectedDifficulty = Difficulty.Expert;
         // ボタン生成
         foreach (MusicDataSO song in musicDatabase.songs)
         {
             MusicButton item = Instantiate(buttonPrefab, contentRoot);
-            item.Init(song, jacketController);
+            item.Init(song, jacketController, globalData);
         }
     }
 }

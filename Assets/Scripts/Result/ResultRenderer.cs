@@ -8,6 +8,8 @@ using UnityEngine.UI;
 public class ResultRenderer : MonoBehaviour
 {
     [SerializeField]
+    GlobalData globalData;
+    [SerializeField]
     private TextMeshProUGUI scoreText;
     [SerializeField]
     private TextMeshProUGUI comboText;
@@ -25,7 +27,7 @@ public class ResultRenderer : MonoBehaviour
     private Texture[] rankTextures;
     void Start()
     {
-        ScoreData scoreData = GlobalData.Instance.GetScoreData();
+        ScoreData scoreData = globalData.scoreData;
         // スコアデータを使ってリザルト画面を表示
         scoreText.text = scoreData.score.ToString();
         comboText.text = scoreData.maxCombo.ToString();

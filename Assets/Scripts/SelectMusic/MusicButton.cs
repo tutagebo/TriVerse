@@ -5,9 +5,12 @@ using UnityEngine.UI;
 
 public class MusicButton : MonoBehaviour
 {
+    [SerializeField]
+    private GlobalData globalData;
     private JacketController jacketController;
-    public void Init(MusicDataSO musicData, JacketController jacketCtrl)
+    public void Init(MusicDataSO musicData, JacketController jacketCtrl, GlobalData globalData)
     {
+        this.globalData = globalData;
         jacketController = jacketCtrl;
         // ボタンの表示内容初期化等
         // 例: ボタンのテキストに曲名とアーティスト名を設定
@@ -25,11 +28,12 @@ public class MusicButton : MonoBehaviour
         }
     }
 
-    private void OnClickMusic(MusicDataSO song)
+    private void OnClickMusic(MusicDataSO song, Difficulty difficulty = Difficulty.Expert)
     {
-        GlobalData.Instance.SetSelectedMusic(song);
+        globalData.selectedMusic = song;
+        globalData.selectedDifficulty = difficulty;
         jacketController.ChangeMusicData(song);
-        jacketController.ChangeDifficulty(Difficulty.Expert);
+        jacketController.ChangeDifficulty(difficulty);
         // Debug.Log($"選択: {song.title} / {song.artist}");
     }
 }
