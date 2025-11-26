@@ -13,12 +13,11 @@ public enum FlickDirection
     right
 }
 
-public enum NoteType
+public enum NotesType
 {
     Tap,
     Flick,
-    HoldStart,
-    HoldEnd
+    Hold
 }
 
 public enum Difficulty

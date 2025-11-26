@@ -12,6 +12,7 @@ public class Notes : MonoBehaviour
     protected Vector3 judgePosition; // 判定位置
     protected NotesPool notesPool;
     public bool isReleased { get; private set; } = false;
+    private bool isInitialized = false;
 
     /* // debug
     int beforeBeat;
@@ -19,6 +20,7 @@ public class Notes : MonoBehaviour
 
     void Update()
     {
+        if(!isInitialized) return;
         double nowBeat = TimingManager.GetNowBeat(gameSettings);
         float dy = (float)((noteBeat - nowBeat) * speedScale);
         transform.position = judgePosition + Vector3.up * dy;
@@ -34,6 +36,7 @@ public class Notes : MonoBehaviour
     }
     public void SetGameSettings(GameSettings settings, Vector3 spawnPos)
     {
+        isInitialized = true;
         gameSettings = settings;
         speedScale = gameSettings.noteSpeed;
         judgePosition = new Vector3(spawnPos.x, gameSettings.noteJudgeHeight, spawnPos.z);
@@ -52,7 +55,6 @@ public class Notes : MonoBehaviour
     }
     public void Release()
     {
-        Debug.Log($"Release Note ID: {id} at Beat: {noteBeat}");
         if (isReleased) return;
         notesPool.Release(this);
         isReleased = true;

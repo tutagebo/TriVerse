@@ -1,16 +1,15 @@
 using System.Collections;
 using System.Collections.Generic;
-using System.Threading.Tasks;
-using UnityEditor.Experimental.GraphView;
 using UnityEngine;
-using UnityEngine.SocialPlatforms.Impl;
 
 public class GameManager : MonoBehaviour
 {
+    [Header("音楽関連")]
     [SerializeField]
     private AudioSource audioSource;
     [SerializeField]
     private AudioClip music;
+    [Header("マネージャー関連")]
     [SerializeField]
     private NotesManager notesManager;
     [SerializeField]
@@ -22,9 +21,14 @@ public class GameManager : MonoBehaviour
     [SerializeField]
     private BindController bindController;
     [SerializeField]
+    private EffectManager effectManager;
+    [Header("デバッグ関連")]
+    [SerializeField]
     private bool isDebug = false; // デバッグモード
     [SerializeField]
     private int debugStartBeat = 0; // デバッグ用に任意の拍から開始する
+
+    // 内部変数
     private ScoreManager scoreManager;
     private double startDspTime;
     private ChartRoot chartData;
@@ -35,24 +39,8 @@ public class GameManager : MonoBehaviour
     private int notesJudgeCount = 0;
     void Start()
     {
-        // GlobalDataから選択された曲と難易度を取得
-        MusicDataSO selectedMusic = GlobalData.Instance.GetSelectedMusic();
-        Difficulty selectedDifficulty = GlobalData.Instance.GetSelectedDifficulty();
-        
-        TextAsset chartJson = selectedMusic.charts[(int)selectedDifficulty];
-
-        // NotesManagerの各NotesGeneratorにGameSettingsをセット
-        notesManager.InitNotesGenerators(gameSettings);
-        // チャートデータの読み込み
-        ChartReader reader = new ChartReader();
-        chartData = reader.Parse(chartJson);
-        audioSource.clip = music;
-        // デバッグ用に任意の拍から開始
-        if (isDebug)
-        {
-            StartDebug(debugStartBeat);
-            return;
-        }
+        // 編集モードではスタートせずボタンから開始
+        if (isDebug) return;
         // ゲーム開始
         StartGame();
     }
@@ -82,16 +70,19 @@ public class GameManager : MonoBehaviour
         {
             judgeResult = judgeSystem.ExecuteJudge(0, bindController.GetNowPos());
             soundManager.LaneTap();    // 効果音
+            effectManager.PlayTapEffect(0, bindController.GetNowPos());
         }
         if (Input.GetKeyDown(KeyCode.S))
         {
             judgeResult = judgeSystem.ExecuteJudge(1, bindController.GetNowPos());
             soundManager.LaneTap();    // 効果音
+            effectManager.PlayTapEffect(1, bindController.GetNowPos());
         }
         if (Input.GetKeyDown(KeyCode.D))
         {
             judgeResult = judgeSystem.ExecuteJudge(2, bindController.GetNowPos());
             soundManager.LaneTap();    // 効果音
+            effectManager.PlayTapEffect(2, bindController.GetNowPos());
         }
         if (judgeResult != JudgeType.None && judgeResult != JudgeType.Miss)
             soundManager.Judge(judgeResult);
@@ -116,6 +107,19 @@ public class GameManager : MonoBehaviour
     }
     void StartGame()
     {
+        // GlobalDataから選択された曲と難易度を取得
+        MusicDataSO selectedMusic = GlobalData.Instance.GetSelectedMusic();
+        Difficulty selectedDifficulty = GlobalData.Instance.GetSelectedDifficulty();
+        
+        TextAsset chartJson = selectedMusic.charts[(int)selectedDifficulty];
+
+        // NotesManagerの各NotesGeneratorにGameSettingsをセット
+        notesManager.InitNotesGenerators(gameSettings);
+        // チャートデータの読み込み
+        ChartReader reader = new ChartReader();
+        chartData = reader.Parse(chartJson);
+        audioSource.clip = music;
+
         // 終了拍の取得
         endBeat = chartData.timing.endBeat;
         // スコアマネージャーはJudgeSystemで初期化
@@ -130,6 +134,8 @@ public class GameManager : MonoBehaviour
         gameSettings.SetBpmPoints(chartData.timing.bpmPoints);
         // JudgeSystemにデータをセット
         judgeSystem.Init(chartData.chart.notes, scoreManager, gameSettings);
+        // エフェクトマネージャー初期化
+        effectManager.Init(gameSettings);
         // フェードイン
         FadeRenderer.Instance.FadeIn(1f);
         // 音楽再生
@@ -140,8 +146,11 @@ public class GameManager : MonoBehaviour
     }
     // デバッグ用に任意の拍から開始する
     // 譜面エディタができたら削除予定
-    void StartDebug(int startBeat)
+    public void StartDebug(int startBeat)
     {
+        // NotesManagerの各NotesGeneratorにGameSettingsをセット
+        notesManager.InitNotesGenerators(gameSettings);
+
         const double leadInBeats = 8.0; // デバッグでもそのままでOK
         double leadInSec = leadInBeats * 60.0 / chartData.timing.bpmPoints[0].bpm;
 
@@ -177,10 +186,9 @@ public class GameManager : MonoBehaviour
         // フェードアウト
         yield return FadeRenderer.Instance.FadeCoroutine(0f, 1f, 1f);
         isGameStarted = false;
-        Debug.Log("ゲーム終了");
         scoreManager.calculateFinalScore(notesJudgeCount, gameSettings.judgeScoreTable);
         ScoreData scoreData = scoreManager.GetScoreData();
-        Debug.Log($"Perfect: {scoreData.perfects}\n Great: {scoreData.greats}\n Good: {scoreData.goods}\n Miss: {scoreData.misses}\n Combo: {scoreData.maxCombo}");
+        // Debug.Log($"Perfect: {scoreData.perfects}\n Great: {scoreData.greats}\n Good: {scoreData.goods}\n Miss: {scoreData.misses}\n Combo: {scoreData.maxCombo}");
 
         GlobalData.Instance.SetSelectedMusic(null);
         GlobalData.Instance.SetScoreData(scoreData);

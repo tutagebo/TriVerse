@@ -10,8 +10,8 @@ public class ScoreCalculator
 
         // 各判定のスコア配分
         int perfectScore = 1000;
-        int greatScore = 800;
-        int goodScore = 500;
+        int greatScore = 920;
+        int goodScore = 600;
         int missScore = 0;
 
         // 合計スコアを計算

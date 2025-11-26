@@ -30,7 +30,6 @@ public class MusicButton : MonoBehaviour
         GlobalData.Instance.SetSelectedMusic(song);
         jacketController.ChangeMusicData(song);
         jacketController.ChangeDifficulty(Difficulty.Expert);
-        // ここで次の画面へ渡す、再生準備する等
-        Debug.Log($"選択: {song.title} / {song.artist}");
+        // Debug.Log($"選択: {song.title} / {song.artist}");
     }
 }
