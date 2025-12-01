@@ -7,10 +7,12 @@ public enum JudgeType
     None
 }
 
+// TODO: アッパーケースに統一する
 public enum FlickDirection
 {
     left,
-    right
+    right,
+    None
 }
 
 public enum NotesType

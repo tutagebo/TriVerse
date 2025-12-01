@@ -6,7 +6,7 @@ public class TapEffectController : MonoBehaviour
 {
     [SerializeField]
     private LineRenderer line;
-    private float lifeTime = 0.2f;
+    private float lifeTime = 0.1f;
     private const float START_HEIGHT = -5f;
 
     public void Init(GameSettings settings)

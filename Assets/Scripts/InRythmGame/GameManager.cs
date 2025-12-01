@@ -42,30 +42,35 @@ public class GameManager : MonoBehaviour
     private int notesJudgeCount = 0;
     void Start()
     {
-        // 編集モードではスタートせずボタンから開始
-        if (isDebug) return;
-        // ゲーム開始
-        StartGame();
+        // TODO: 編集モードではスタートせずボタンから開始にする
+        if (isDebug) StartDebug(debugStartBeat);
+        else StartGame(); // ゲーム開始
     }
     void Update()
     {
         if (!isGameStarted) return;
         // TODO: 設定で効果音消せるようにする
         JudgeType flickJudge = JudgeType.None;
+        FlickDirection flickDirection = FlickDirection.None;
         if (Input.GetKeyDown(KeyCode.LeftArrow))
         {
             flickJudge = judgeSystem.JudgeFlick(bindController.GetNowPos(), FlickDirection.left);
+            flickDirection = FlickDirection.left;
             bindController.MoveLeft();
             soundManager.FlickAir();    // 効果音
         }
         if (Input.GetKeyDown(KeyCode.RightArrow))
         {
             flickJudge = judgeSystem.JudgeFlick(bindController.GetNowPos(), FlickDirection.right);
+            flickDirection = FlickDirection.right;
             bindController.MoveRight();
             soundManager.FlickAir();    // 効果音
         }
         if (flickJudge != JudgeType.None && flickJudge != JudgeType.Miss)
+        {
             soundManager.FlickJudge();
+            effectManager.PlayFlickEffect(bindController.GetNowPos(), flickDirection);
+        }
         holdingLanes.Clear();
         JudgeType judgeResult = JudgeType.None;
         // TODO: 判定が重なったときいいほうのを採用するようにする
